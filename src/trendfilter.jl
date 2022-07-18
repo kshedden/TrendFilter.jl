@@ -3,21 +3,49 @@
 # https://arxiv.org/abs/1406.2082
 
 mutable struct Trendfilter{T}
+
+    # The x coordinates of the data, must be distinct and increasing
     x::Vector{T}
+
+    # The y coordinates of the data
     y::Vector{T}
+
+    # Optional weight matrix, (y-beta)'*wt*(y-beta) is used to measure goodness as fit.
+    wt::AbstractArray
+
+    # The current fitted value
     beta::Vector{T}
+
+    # A slack variable
     u::Vector{T}
+
+    # The penalty parameter
     lam::Float64
+
+    # The ADMM weight parameter
     rho::Float64
+
+    # A penalty matrix of one order lower than that used in the loss function.
     Dk::BandedMatrix
+
+    # The penalty matrix, used in the formal optimization problem, not used
+    # explicitly in the ADMM except to judge convergence.
     Dkp1::BandedMatrix
+
+    # Auxiliar variables
     DktDk::Symmetric
     Dkbeta::Vector{T}
     fl::FusedLasso
+
+    # Various workspaces
     numer::Vector{T}
     denom::Cholesky
     work2::Vector{T}
+
+    # Current iteration number
     iter::Int
+
+    # Indicator that the algorithm converged
     converged::Bool
 end
 
@@ -29,7 +57,7 @@ end
 
 StatsBase.coef(tf::Trendfilter) = tf.beta
 
-function Trendfilter(x, y, lam; order = 1)
+function Trendfilter(x, y, lam; wt = zeros(0, 0), order = 1)
     n = length(y)
     issorted(x) || throw(error("x must be sorted"))
     length(x) == n || throw(error("x and y must have the same length"))
@@ -54,10 +82,20 @@ function Trendfilter(x, y, lam; order = 1)
     alpha .= 0
     numer = zeros(n)
 
+    # Prepare the weight matrix.
+    wt = if typeof(wt) <: AbstractVector && length(wt) == n
+        Diagonal(wt)
+    elseif typeof(wt) <: AbstractMatrix && all(size(wt) .== [n, n])
+        wt
+    else
+        I(n)
+    end
+
+    # Adjust the ADMM parameter if needed to produce a non-singular problem.
     denom = nothing
     while true
         try
-            denom = cholesky(I(n) + rho * DktDk)
+            denom = cholesky(wt + rho * DktDk)
             break
         catch
             rho /= 2
@@ -68,6 +106,7 @@ function Trendfilter(x, y, lam; order = 1)
     return Trendfilter(
         x,
         y,
+        wt,
         beta,
         u,
         lam,

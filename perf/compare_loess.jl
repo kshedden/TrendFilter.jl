@@ -1,7 +1,7 @@
 using TrendFilter, Loess, Printf, TimerOutputs
 
 n = 1000
-nrep = 100
+nrep = 500
 order = 2
 
 function sim(f, x)
