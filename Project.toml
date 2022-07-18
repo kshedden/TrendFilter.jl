@@ -1,0 +1,10 @@
+name = "TrendFilter"
+uuid = "678c0432-a74d-4516-8c57-03282d9fc204"
+authors = ["Kerby Shedden <kshedden@umich.edu>"]
+version = "0.1.0"
+
+[deps]
+BandedMatrices = "aae01518-5342-5314-be14-df237901396f"
+Lasso = "b4fcebef-c861-5a0f-a7e2-ba9dc32b180a"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
