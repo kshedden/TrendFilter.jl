@@ -34,18 +34,20 @@ end
 @testset "Example 1" begin
 
     rng = StableRNG(123)
-    n = 1000
+    n = 2000
 
-    for j = 1:10
-        x = randn(rng, n)
-        sort!(x)
-        ey = x .^ 2
-        ey[x.<=0] .= 0
-        y = ey + randn(rng, n)
+    for order in [1, 2]
+        for j = 1:10
+            x = collect(range(-1, 1; length=n)) + 0.01*randn(n)
+            sort!(x)
+            ey = x .^ 2
+            ey[x.<=0] .= 0
+            y = ey + randn(rng, n)
 
-        tf = fit(Trendfilter, x, y, 1.0; order = 1)
-        yh = coef(tf)
+            tf = fit(Trendfilter, x, y, 0.5; order = order)
+            yh = coef(tf)
 
-        @test mean(abs, ey - yh) < 0.1
+            @test mean(abs, ey - yh) < 0.1
+        end
     end
 end

@@ -14,7 +14,7 @@ function sim(f, x)
     end
     tf = (x, y) -> begin
         m = Trendfilter(x, y, 1.0; order = order)
-        fit!(m)
+        fit!(m; maxiter=20)
         coef(m)
     end
 

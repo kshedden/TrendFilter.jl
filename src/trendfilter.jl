@@ -11,6 +11,7 @@ mutable struct Trendfilter{T}
     y::Vector{T}
 
     # Optional weight matrix, (y-beta)'*wt*(y-beta) is used to measure goodness as fit.
+    # If wt is a vector it is interpreted as a diagonal matrix.
     wt::AbstractArray
 
     # The current fitted value
@@ -29,10 +30,10 @@ mutable struct Trendfilter{T}
     Dk::BandedMatrix
 
     # The penalty matrix, used in the formal optimization problem, not used
-    # explicitly in the ADMM except to judge convergence.
+    # explicitly by ADMM except to judge convergence.
     Dkp1::BandedMatrix
 
-    # Auxiliar variables
+    # Auxiliary variables
     DktDk::Symmetric
     Dkbeta::Vector{T}
     fl::FusedLasso
@@ -61,9 +62,11 @@ function Trendfilter(x, y, lam; wt = zeros(0, 0), order = 1)
     n = length(y)
     issorted(x) || throw(error("x must be sorted"))
     length(x) == n || throw(error("x and y must have the same length"))
+    order in [1, 2] || throw(error("order must be either 1 or 2"))
     n == length(unique(x)) || throw(error("all elements of x must be unique"))
 
-    rho = lam * (x[end] - x[1]) / n
+    # Equation 19 of Tibshirani and Ramdas
+    rho = lam * (x[end] - x[1])^order / n
 
     D1, D2, D3 = differencemats(x)
     Dk, Dkp1 = if order == 1
